@@ -223,7 +223,18 @@ public:
         }
         return CHECK_SYNTXINV_STATUS_RESULT_WAIT_SYN;
     }
+    int GetTxInvSingleSynCount(const uint256& hashFork)
+    {
+        std::map<uint256, CNetChannelPeerFork>::iterator it = mapSubscribedFork.find(hashFork);
+        if (it != mapSubscribedFork.end())
+        {
+            return it->second.nSingleSynTxInvCount;
+        }
+        return 0;
+    }
     bool MakeTxInv(const uint256& hashFork, const std::vector<uint256>& vTxPool, std::vector<network::CInv>& vInv);
+    bool CheckSynTxInvStatus(const uint256& hashFork, bool& fTimeout, int& nSingleSynCount);
+    void SetSynTxInvStatus(const uint256& hashFork);
 
 public:
     enum
