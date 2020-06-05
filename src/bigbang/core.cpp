@@ -372,6 +372,10 @@ Errno CCoreProtocol::ValidateBlock(const CBlock& block)
 
 Errno CCoreProtocol::ValidateOrigin(const CBlock& block, const CProfile& parentProfile, CProfile& forkProfile)
 {
+    if (!block.vtx.empty())
+    {
+        return DEBUG(ERR_BLOCK_INVALID_FORK, "load profile error\n");
+    }
     if (!forkProfile.Load(block.vchProof))
     {
         return DEBUG(ERR_BLOCK_INVALID_FORK, "load profile error\n");
@@ -1102,7 +1106,7 @@ Errno CCoreProtocol::VerifyForkTx(const CTransaction& stx, const uint256& hashFo
         CBufStream ss;
         ss.Write((const char*)&stx.vchData[0], stx.vchData.size());
         ss >> block;
-        if (!block.IsOrigin() || block.IsPrimary())
+        if (!block.IsOrigin() || block.IsPrimary() || !block.vtx.empty())
         {
             throw std::runtime_error("invalid block");
         }
@@ -1118,7 +1122,7 @@ Errno CCoreProtocol::VerifyForkTx(const CTransaction& stx, const uint256& hashFo
     }
 
     CForkContextEx ctxtParent;
-    if (!forkSetMgr.RetrieveByFork(profile.hashParent, ctxtParent) && !unconfirmedForkSetMgr.RetrieveByFork(profile.hashParent, ctxtParent))
+    if (!forkSetMgr.RetrieveByName(profile.strName, ctxtParent) && !unconfirmedForkSetMgr.RetrieveByName(profile.strName, ctxtParent))
     {
         Log("VerifyForkTx Retrieve parent context Error: %s ", profile.hashParent.ToString().c_str());
         return ERR_MISSING_PREV;
@@ -1132,7 +1136,7 @@ Errno CCoreProtocol::VerifyForkTx(const CTransaction& stx, const uint256& hashFo
         return err;
     }
 
-    unconfirmedForkSetMgr.Add(CForkContext(block.GetHash(), block.hashPrev, txid, profile));
+    unconfirmedForkSetMgr.Insert(CForkContext(block.GetHash(), block.hashPrev, txid, profile));
     return OK;
 }
 
